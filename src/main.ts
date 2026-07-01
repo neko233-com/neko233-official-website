@@ -99,15 +99,31 @@ function statLabel(project: Project) {
 function card(project: Project, index: number, variant = "") {
   return `
     <a class="project-card ${project.scale} ${variant}" href="${project.url}" target="_blank" rel="noreferrer" style="--accent: ${project.accent}; --delay: ${index * 90}ms">
-      <span class="card-glow"></span>
-      <img src="${project.image}" alt="${project.name} project preview" loading="${index > 1 ? "lazy" : "eager"}" />
-      <span class="card-body">
-        <span class="card-kicker">${project.kicker}</span>
-        <span class="card-title">${project.name}</span>
-        <span class="card-copy">${project.description}</span>
-        <span class="card-meta">
-          <span>${statLabel(project)}</span>
-          <span>Updated ${project.updated}</span>
+      <span class="card-rotor">
+        <span class="card-face card-front">
+          <span class="card-shine"></span>
+          <span class="card-glow"></span>
+          <img src="${project.image}" alt="${project.name} project preview" loading="${index > 1 ? "lazy" : "eager"}" />
+          <span class="card-body">
+            <span class="card-kicker">${project.kicker}</span>
+            <span class="card-title">${project.name}</span>
+            <span class="card-copy">${project.description}</span>
+            <span class="card-meta">
+              <span>${statLabel(project)}</span>
+              <span>Updated ${project.updated}</span>
+            </span>
+          </span>
+        </span>
+        <span class="card-face card-back">
+          <span class="back-index">${String(index + 1).padStart(2, "0")}</span>
+          <span class="back-title">${project.name}</span>
+          <span class="back-copy">${project.description}</span>
+          <span class="back-stack">
+            <span>${project.language}</span>
+            <span>${project.stars} stars</span>
+            <span>${project.updated}</span>
+          </span>
+          <span class="back-action">Open GitHub</span>
         </span>
       </span>
     </a>
@@ -165,6 +181,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
 `;
 
 const stage = document.querySelector<HTMLElement>(".card-stage");
+const cards = [...document.querySelectorAll<HTMLElement>(".project-card")];
 
 window.addEventListener("pointermove", (event) => {
   if (!stage) return;
@@ -173,3 +190,41 @@ window.addEventListener("pointermove", (event) => {
   stage.style.setProperty("--tilt-x", `${y.toFixed(2)}deg`);
   stage.style.setProperty("--tilt-y", `${-x.toFixed(2)}deg`);
 });
+
+cards.forEach((cardElement) => {
+  cardElement.addEventListener("pointermove", (event) => {
+    const rect = cardElement.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width;
+    const py = (event.clientY - rect.top) / rect.height;
+    cardElement.style.setProperty("--mx", `${(px * 100).toFixed(2)}%`);
+    cardElement.style.setProperty("--my", `${(py * 100).toFixed(2)}%`);
+    cardElement.style.setProperty("--rx", `${((0.5 - py) * 12).toFixed(2)}deg`);
+    cardElement.style.setProperty("--ry", `${((px - 0.5) * 14).toFixed(2)}deg`);
+  });
+
+  cardElement.addEventListener("pointerleave", () => {
+    cardElement.style.setProperty("--rx", "0deg");
+    cardElement.style.setProperty("--ry", "0deg");
+    cardElement.style.setProperty("--mx", "50%");
+    cardElement.style.setProperty("--my", "50%");
+  });
+
+  cardElement.addEventListener("click", (event) => {
+    if (!window.matchMedia("(hover: none)").matches) return;
+    if (cardElement.classList.contains("is-flipped")) return;
+    event.preventDefault();
+    cards.forEach((otherCard) => otherCard.classList.remove("is-flipped"));
+    cardElement.classList.add("is-flipped");
+  });
+});
+
+const observer = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) entry.target.classList.add("in-view");
+    });
+  },
+  { threshold: 0.25 },
+);
+
+cards.forEach((cardElement) => observer.observe(cardElement));

@@ -203,9 +203,55 @@ h1 {
 }
 
 .project-card {
+  --mx: 50%;
+  --my: 50%;
+  --rx: 0deg;
+  --ry: 0deg;
   position: relative;
-  display: flex;
+  display: block;
   min-height: 18rem;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  opacity: 0;
+  transform: translateY(30px) rotateX(18deg) rotateY(-16deg);
+  transition:
+    opacity 420ms ease,
+    transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: cardIn 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--delay);
+}
+
+.project-card.in-view {
+  opacity: 1;
+  transform: translateY(0) rotateX(0) rotateY(0);
+}
+
+.project-card:hover {
+  z-index: 8;
+}
+
+.card-rotor {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform-style: preserve-3d;
+  transition:
+    transform 680ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 220ms ease;
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+}
+
+.project-card:hover .card-rotor,
+.project-card.is-flipped .card-rotor {
+  transform: rotateX(var(--rx)) rotateY(calc(var(--ry) + 180deg)) translateY(-4px);
+  filter: saturate(1.14);
+}
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  min-height: 100%;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--accent) 46%, rgba(255, 255, 255, 0.18));
   border-radius: 8px;
@@ -213,22 +259,31 @@ h1 {
   box-shadow:
     0 26px 80px rgba(0, 0, 0, 0.45),
     0 0 42px color-mix(in srgb, var(--accent) 26%, transparent);
-  transform: translateZ(0);
+  backface-visibility: hidden;
   isolation: isolate;
-  transition:
-    transform 220ms ease,
-    border-color 220ms ease,
-    box-shadow 220ms ease;
-  animation: cardIn 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: var(--delay);
 }
 
-.project-card:hover {
-  transform: translateY(-7px) scale(1.015);
+.project-card:hover .card-face,
+.project-card.is-flipped .card-face {
   border-color: color-mix(in srgb, var(--accent) 80%, white);
   box-shadow:
     0 36px 92px rgba(0, 0, 0, 0.55),
     0 0 62px color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
+.card-front {
+  transform: rotateY(0deg);
+}
+
+.card-back {
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.1rem;
+  background:
+    radial-gradient(circle at var(--mx) var(--my), color-mix(in srgb, var(--accent) 42%, transparent), transparent 24rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02)),
+    rgba(7, 7, 14, 0.94);
+  transform: rotateY(180deg);
 }
 
 .card-stage .project-card {
@@ -266,7 +321,7 @@ h1 {
   transform: rotate(3deg) translateY(-8px) translateZ(55px);
 }
 
-.project-card img {
+.card-front img {
   position: absolute;
   inset: 0;
   z-index: -2;
@@ -277,11 +332,12 @@ h1 {
   transition: transform 260ms ease;
 }
 
-.project-card:hover img {
+.project-card:hover .card-front img,
+.project-card.is-flipped .card-front img {
   transform: scale(1.04);
 }
 
-.project-card::after {
+.card-front::after {
   position: absolute;
   inset: 0;
   z-index: -1;
@@ -289,6 +345,27 @@ h1 {
   background:
     linear-gradient(180deg, rgba(4, 4, 8, 0.02), rgba(4, 4, 8, 0.9)),
     linear-gradient(90deg, rgba(4, 4, 8, 0.84), rgba(4, 4, 8, 0.14));
+}
+
+.card-shine {
+  position: absolute;
+  inset: -1px;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.34), transparent 9rem),
+    linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, 0.24), transparent 42%);
+  background-size: 100% 100%, 240% 100%;
+  background-position: center, -160% 0;
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.project-card:hover .card-shine,
+.project-card.is-flipped .card-shine {
+  opacity: 0.78;
+  animation: shineSweep 840ms ease both;
 }
 
 .card-glow {
@@ -304,6 +381,8 @@ h1 {
 }
 
 .card-body {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -348,6 +427,56 @@ h1 {
   color: rgba(255, 255, 255, 0.74);
   font-size: 0.74rem;
   font-weight: 800;
+}
+
+.back-index {
+  align-self: flex-end;
+  color: color-mix(in srgb, var(--accent) 58%, white);
+  font-size: clamp(3rem, 6vw, 5.6rem);
+  line-height: 0.8;
+  font-weight: 1000;
+}
+
+.back-title {
+  max-width: 10ch;
+  font-size: clamp(2.1rem, 4.4vw, 4.1rem);
+  line-height: 0.82;
+  font-weight: 1000;
+  letter-spacing: 0;
+}
+
+.back-copy {
+  max-width: 27rem;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.back-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.back-stack span,
+.back-action {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 2.1rem;
+  padding: 0 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.back-action {
+  border-color: color-mix(in srgb, var(--accent) 66%, white);
+  background: var(--accent);
+  color: #07070e;
 }
 
 .side-note,
@@ -454,6 +583,15 @@ h1 {
   to {
     opacity: 1;
     filter: blur(0);
+  }
+}
+
+@keyframes shineSweep {
+  from {
+    background-position: center, -160% 0;
+  }
+  to {
+    background-position: center, 160% 0;
   }
 }
 
