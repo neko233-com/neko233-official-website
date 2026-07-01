@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "neko233-official-website-worker",
+  "compatibility_date": "2026-07-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "routes": [
+    {
+      "pattern": "www.neko233.com/*",
+      "zone_id": "5e64000242aaf5b3489701eed0c45163"
+    }
+  ]
+}
